@@ -1,0 +1,16 @@
+#
+# Interfaces that shouldn't be managed by NetworkManager
+#
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth1", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth2", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth3", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth4", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth5", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth6", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth7", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth8", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth9", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth10", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth11", ENV{NM_UNMANAGED}="1"
+ACTION=="add", SUBSYSTEM=="net", KERNEL=="eth12", ENV{NM_UNMANAGED}="1"
+

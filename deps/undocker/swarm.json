@@ -1,0 +1,6 @@
+{
+
+"retry_join": ["192.168.141.0"],
+"retry_interval": "10s" 
+
+}

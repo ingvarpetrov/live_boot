@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<BootSequence version="1.0" os_tag="inca_os" os_version="1.0.0.0" type="ingvarpack">
+  <BootFile>
+        <Filename>layer_base_os.tar.gz</Filename>
+        <Version>1.0</Version>
+  </BootFile>
+</BootSequence>

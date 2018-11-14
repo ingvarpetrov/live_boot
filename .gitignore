@@ -1,0 +1,6 @@
+filesystem.squashfs
+*.gz
+chroot/
+*2017/
+__bin/
+.tar

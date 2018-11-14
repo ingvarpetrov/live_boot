@@ -1,0 +1,17 @@
+config:
+  target: "http://10.0.0.2"
+  phases:
+    - duration: 6000
+      arrivalRate: 7
+
+  plugins:
+    hls: {}
+
+
+scenarios:
+  - flow:
+      - get:
+          url: "/CTV/tracks-v1a1/mono.m3u8"
+          hls:
+            concurrency: 5
+

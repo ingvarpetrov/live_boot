@@ -1,0 +1,75 @@
+#!/bin/busybox sh
+
+[ -e /dev/mem ] || mknod -m 660 /dev/mem c 1 1
+hxc-led red
+
+# Mount the /proc and /sys filesystems.
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t efivarfs none /sys/firmware/efi/efivars
+
+[ -d /dev ] || mkdir -m 0755 /dev
+[ -d /root ] || mkdir -m 0700 /root
+[ -d /sys ] || mkdir /sys
+[ -d /proc ] || mkdir /proc
+[ -d /tmp ] || mkdir /tmp
+mkdir -p /var/lock
+mount -t sysfs -o nodev,noexec,nosuid none /sys 
+mount -t proc -o nodev,noexec,nosuid none /proc 
+
+# Note that this only becomes /dev on the real filesystem if udev's scripts
+# are used; which they will be, but it's worth pointing out
+tmpfs_size="10M"
+if [ -e /etc/udev/udev.conf ]; then
+ . /etc/udev/udev.conf
+fi
+mount -t tmpfs -o size=$tmpfs_size,mode=0755 udev /dev
+[ -e /dev/console ] || mknod -m 0600 /dev/console c 5 1
+[ -e /dev/null ] || mknod /dev/null c 1 3
+
+# get license from EFI
+mount -t efivarfs none /sys/firmware/efi/efivars
+dd if=/sys/firmware/efi/efivars/IncaLicence-ee1ba5b2-edb2-4121-8a9e-ec2a16a89954 of=/INCAFW/boot/licence.bin skip=5 bs=1
+
+
+
+
+# Set up network interface and pull rootfs.
+ifconfig eth0 up
+#udhcpc -t 5 -q -c "ini" -s /dhcp.helper
+#udhcpc -t 5 -q -x 0x3d:696e69 -s /dhcp.helper
+udhcpc -t 5 -q -s /dhcp.helper
+
+mkdir -p /mnt/ram
+mkdir -p /mnt/squash
+###############$$$$wget $(cat /var/server_ip)/live/filesystem.squashfs -O /tmp/fs
+wget $(cat /var/server_ip)/inca/inca_4400dvp_os_1.0 -O /INCAFW/firmware/inca_4400dvp_os_1.0
+wget $(cat /var/server_ip)/inca/layer_rootfs.ip -O /INCAFW/firmware/layer_rootfs.ip
+wget $(cat /var/server_ip)/inca/layer_imss17r2.ip -O /INCAFW/firmware/layer_imss17r2.ip
+
+#cat boot.xml | grep -oE '<Filename>.*<\/Filename>' | sed -e 's/<[^>]*>//g'
+
+cp /INCAFW/firmware/boot.xml /INCAFW/boot/boot.xml
+echo "exec boot /INCAFW /firmware ."
+
+sh 
+
+#wget http://10.239.129.60:8081/live/filesystem.squashfs -O /tmp/filesystem.squashfs
+# Mount the root filesystem.
+
+busybox mount /tmp/fs /mnt/squash -t squashfs -o loop
+busybox mount none /mnt/ram -t tmpfs -o size=1500m
+
+cp -r /mnt/squash/* /mnt/ram
+
+
+# Clean up.
+umount /proc
+umount /sys
+umount /mnt/squash
+
+[ -e /dev/mem ] || mknod -m 660 /dev/mem c 1 1
+hxc-led amber
+# Boot the real thing.
+###$$$$$###exec switch_root /mnt/ram /sbin/init
+exec boot /INCAFW /firmware .

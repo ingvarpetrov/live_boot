@@ -1,0 +1,65 @@
+#!/bin/busybox sh
+
+[ -e /dev/mem ] || mknod -m 660 /dev/mem c 1 1
+
+# Mount the /proc and /sys filesystems.
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t efivarfs none /sys/firmware/efi/efivars
+
+[ -d /dev ] || mkdir -m 0755 /dev
+[ -d /root ] || mkdir -m 0700 /root
+[ -d /sys ] || mkdir /sys
+[ -d /proc ] || mkdir /proc
+[ -d /tmp ] || mkdir /tmp
+
+mkdir -p /var/lock
+mount -t sysfs -o nodev,noexec,nosuid none /sys 
+mount -t proc -o nodev,noexec,nosuid none /proc 
+tmpfs_size="10M"
+if [ -e /etc/udev/udev.conf ]; then
+ . /etc/udev/udev.conf
+fi
+mount -t tmpfs -o size=$tmpfs_size,mode=0755 udev /dev
+
+[ -e /dev/console ] || mknod -m 0600 /dev/console c 5 1
+[ -e /dev/null ] || mknod /dev/null c 1 3
+[ -e /dev/sda1 ] || mknod /dev/sda1 b 8 1 
+
+mkdir -p /mnt/usb
+mount /dev/sda1 /mnt/usb
+
+
+# Set up network interface and pull rootfs.
+ifconfig eth0 up
+#udhcpc -t 5 -q -s /dhcp.helper
+
+mkdir -p /mnt/ram
+##########################3
+sh
+
+set -- $(cat /mnt/usb/boot/boot.xml | grep -oE '<Filename>.*<\/Filename>' | sed -e 's/<[^>]*>//g')
+FS_TYPE=$(awk -F"\"" ' /BootSequence/ {print $8}' /mnt/usb/boot/boot.xml)
+echo "FS_TYPE: $FS_TYPE"
+
+if  [  "$FS_TYPE" == "ingvarpack" ]; then
+mkdir -p /mnt/ram
+mount none /mnt/ram -t tmpfs -o size=1500m
+
+for var in "$@"
+do
+    echo $var
+    cd /mnt/ram
+    zcat /mnt/usb/live/$var | cpio -idmuv
+done
+fi
+# Clean up.
+umount /mnt/usb
+umount /proc
+umount /sys
+
+[ -e /dev/mem ] || mknod -m 660 /dev/mem c 1 1
+
+sh
+# Boot the real thing.
+exec switch_root /mnt/ram /sbin/init

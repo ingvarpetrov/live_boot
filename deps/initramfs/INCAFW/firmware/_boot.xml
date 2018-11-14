@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<BootSequence version="1.0" os_tag="inca_os" os_version="1.0.0.0">
+  <BootFile>
+	<Filename>inca_4400dvp_os_1.0</Filename>
+	<Version>1.0</Version>
+  </BootFile>
+  <BootFile>
+        <Filename>layer_rootfs.ip</Filename>
+        <Version>1.0</Version>
+  </BootFile>
+  <BootFile>
+        <Filename>layer_imss17r2.ip</Filename>
+        <Version>1.0</Version>
+  </BootFile>
+</BootSequence>
