@@ -49,13 +49,13 @@ sync
 
 echo "copying Bootloader files files"
 
-mkdir -p $MOUNT_DIR
+mkdir -p $MOUNT_DIR/boot/extlinux
 
 mount ${TARGET_DEVICE}1 $MOUNT_DIR
 
-#apt-get install extlinux -y
-#extlinux -i ${TARGET}/boot/extlinux
-cp -a $DEPS_DIR/bootloader/* $MOUNT_DIR
+apt-get install extlinux -y
+extlinux -i ${TARGET}/boot/extlinux
+cp -a $DEPS_DIR/bootloader/boot/ $MOUNT_DIR
 dd if=$DEPS_DIR/bootloader/mbr.bin of=${TARGET_DEVICE}
 
 sync
