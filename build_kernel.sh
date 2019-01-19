@@ -35,18 +35,17 @@ pushd $KERNEL_SOURCE
 #git apply .....patch
 popd
 
-
+mkdir -p $MODULE_OUT
 cd $KERNEL_SOURCE
   make  -j$(nproc) mrproper
   make O=$KERNEL_OUT -j$(nproc) $DEFAULT_CONFIG
   make O=$KERNEL_OUT -j$(nproc) menuconfig
   make O=$KERNEL_OUT -j$(nproc) bzImage modules
-
+  make O=$KERNEL_OUT modules_install INSTALL_MOD_PATH=$MODULE_OUT
 echo "Kernel Build Finished"
 
 
 mkdir -p $BOOTLOADER_OUT
 
 cp $KERNEL_OUT/arch/x86/boot/bzImage $BOOTLOADER_OUT
-mkdir -p $MODULE_OUT
-make modules_install INSTALL_MOD_PATH=$MODULE_OUT
+
