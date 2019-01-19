@@ -55,7 +55,7 @@ mount ${TARGET_DEVICE}1 $MOUNT_DIR
 cp -a $DEPS_DIR/bootloader/boot/ $MOUNT_DIR
 
 apt-get install extlinux -y
-extlinux -i ${TARGET}/boot/extlinux
+extlinux -i $MOUNT_DIR/boot/extlinux
 dd if=$DEPS_DIR/bootloader/mbr.bin of=${TARGET_DEVICE}
 
 sync

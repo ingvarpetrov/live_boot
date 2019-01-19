@@ -1,45 +1,74 @@
-#!/bin/bash
-set -e -x
+#! /bin/bash -e 
 
-# Check if we are running this script as root
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run with sudo privileges!" 1>&2
-   exit 1
+
+echo "Setting Environmental Variables."
+
+TX_BASE_DIR=$(pwd)
+export KERNEL_SOURCE=$TX_BASE_DIR/sources/kernel
+export BIN_DIR=$TX_BASE_DIR/__bin
+export KERNEL_OUT=$BIN_DIR/kernel
+
+export ROOTFS_PATH=$BIN_DIR/rootfs
+export BOOT_DIR=$BIN_DIR/p1
+
+export BOOTLOADER_OUT=$BIN_DIR/boot_partition
+
+export MODULE_OUT_PATH=$KERNEL_OUT/module_deploy
+export HEADER_OUT_PATH=$KERNEL_OUT/header_deploy
+
+#export DEFAULT_CONFIG=bcm2835_defconfig
+#export DEFAULT_CONFIG=multi_v7_defconfig
+#export DEFAULT_CONFIG=bcm2709_defconfig
+#export DEFAULT_CONFIG=defconfig
+export DEFAULT_CONFIG=mvebu_v8_lsp_defconfig
+
+
+#export BUILD_TAG=v4.14.89
+#export BUILD_TAG=v4.19.12
+#export BUILD_TAG=v4.14.91
+export BUILD_TAG=linux-4.4.52-armada-17.10
+
+
+#export KERNEL_SOURCE_GIT="git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git"
+export KERNEL_SOURCE_GIT="https://github.com/MarvellEmbeddedProcessors/linux-marvell"
+
+# Get kernel Source
+if [[ ! -d $KERNEL_SOURCE ]]; then
+git clone --depth 1 -b $BUILD_TAG $KERNEL_SOURCE_GIT $KERNEL_SOURCE
 fi
 
-CURRENT_FOLDER=$(pwd)
-KERNEL_FOLDER=__bin/kernel
-SCHROOT_INSTANCE=gpusb
 
+pushd $KERNEL_SOURCE
+#wget --content-disposition http://wiki.espressobin.net/tiki-download_file.php?fileId=168
+#wget --content-disposition http://wiki.espressobin.net/tiki-download_file.php?fileId=169
 
-rm -rf $KERNEL_FOLDER
-mkdir -p $KERNEL_FOLDER
+#git apply 0003-dts-espressobin-add-emmc-support.patch
+#git apply 0004-dts-espressobin-swapped-wan-and-lan1-port-mapping-fo.patch
+popd
 
-cd $CURRENT_FOLDER/$KERNEL_FOLDER
-echo "download 4.4 kernel"
-if [ ! -f ./linux-4.4.tar.xz ]; then
-     wget https://www.kernel.org/pub/linux/kernel/v4.x/linux-4.4.tar.xz
-fi
-tar -xJf linux-4.4.tar.xz
-cd linux-4.4
+#cp deps/kernel/$DEFAULT_CONFIG $KERNEL_SOURCE/arch/arm/configs/
 
-cp $CURRENT_FOLDER/deps/kernel/.config .
-
-echo "build 4.4 kernel" 
-#make olddefconfig
-make -j$(nproc)
-cd $CURRENT_FOLDER
-
-schroot -c $SCHROOT_INSTANCE /bin/bash  <<'EOF'
-CURRENT_FOLDER=$(pwd)
-
-
-make modules_install
-#make install
-cd $KERNEL_FOLDER/linux-4.4
-
-rm -rf /etc/debian_chroot
+## Check Toolchain
+export TCH_DIR=__bin/toolchain
+if [[ ! -d $TCH_DIR ]]; then
+echo "please install toolchain using ./set_toolchain.sh"
 exit
-EOF
+fi
+
+source $TCH_DIR/exports
+export CROSS_COMPILE=$CROSS_COMPILE
+export ARCH=$ARCH
+
+cd $KERNEL_SOURCE
+  make  -j$(nproc) mrproper
+  make O=$KERNEL_OUT -j$(nproc) $DEFAULT_CONFIG
+  make O=$KERNEL_OUT -j$(nproc) menuconfig
+  make O=$KERNEL_OUT -j$(nproc) Image dtbs modules
 
 
+
+echo "Kernel Build Finished"
+
+
+mkdir -p $BOOTLOADER_OUT
+cp $KERNEL_OUT/arch/arm64/boot/{Image,dts/marvell/armada-3720-community.dtb} $BOOTLOADER_OUT
