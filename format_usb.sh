@@ -1,4 +1,16 @@
 #!/bin/bash
+
+TX_BASE_DIR=$(pwd)
+export DEPS_DIR=$TX_BASE_DIR/deps
+export MOUNT_DIR="/mnt/usb"
+
+
+# Check if we are running this script as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run with sudo privileges!" 1>&2
+   exit 1
+fi
+
 ls -l /dev/disk/by-id/usb* | grep -Eio '(/sd?..)'
 if ! [ $? -eq 0 ]
 then
@@ -21,39 +33,30 @@ read -p "Proceed? (Y/N) " -n 1 -r
 echo    # (optional) move to a new line
 if  [[ ! $REPLY =~ ^[Yy]$ ]]
 then
+    echo "Interrupted"
     exit 0
 fi
 
 echo "Removing old partitions"
+wipefs -a $TARGET_DEVICE
 dd if=/dev/zero of=$TARGET_DEVICE  bs=512  count=1000
+
 echo "create partition"
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${TARGET_DEVICE}
-  o # clear the in memory partition table
-  n # new partition
-  p # primary partition
-  1 # partition number 1
-    # default - start at beginning of disk 
-  +1GB # 100 MB boot parttion
-  a # make a partition bootable
-  1 # bootable partition is partition 1
-  p # print the in-memory partition table
-  w # write the partition table
-  q # and we're done
-EOF
-echo "label partition"
-mkfs -t ext2  ${TARGET_DEVICE}1 
-tune2fs -L gpusb ${TARGET_DEVICE}1
-echo "copying files"
-
-mkdir /mnt/usb
-
-TARGET="/mnt/usb"
-mount ${TARGET_DEVICE}1 ${TARGET}
+parted -s $TARGET_DEVICE mklabel msdos mkpart primary ext4 1M 100% set 1 boot on
+sudo mkfs.ext4  ${TARGET_DEVICE}1
+e2label ${TARGET_DEVICE}1 LIVE-USB
 sync
-mkdir -p ${TARGET}/boot/extlinux ${TARGET}/live
 
-apt-get install extlinux -y
+echo "copying Bootloader files files"
 
-extlinux -i ${TARGET}/boot/extlinux
-dd if=deps/boot/mbr.bin of=${TARGET_DEVICE}
-umount /mnt/usb
+mkdir -p $MOUNT_DIR
+
+mount ${TARGET_DEVICE}1 $MOUNT_DIR
+
+#apt-get install extlinux -y
+#extlinux -i ${TARGET}/boot/extlinux
+cp -a $DEPS_DIR/bootloader/* $MOUNT_DIR
+dd if=$DEPS_DIR/bootloader/mbr.bin of=${TARGET_DEVICE}
+
+sync
+umount $MOUNT_DIR
