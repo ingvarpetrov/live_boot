@@ -8,13 +8,11 @@ export KERNEL_SOURCE=$TX_BASE_DIR/sources/kernel
 export BIN_DIR=$TX_BASE_DIR/__bin
 export KERNEL_OUT=$BIN_DIR/kernel
 
-export ROOTFS_PATH=$BIN_DIR/rootfs
-export BOOT_DIR=$BIN_DIR/p1
 
 export BOOTLOADER_OUT=$BIN_DIR/boot_partition
 
-export MODULE_OUT_PATH=$KERNEL_OUT/module_deploy
-export HEADER_OUT_PATH=$KERNEL_OUT/header_deploy
+export MODULE_OUT=$KERNEL_OUT/module_deploy
+#export HEADER_OUT_PATH=$KERNEL_OUT/header_deploy
 
 export DEFAULT_CONFIG=defconfig
 
@@ -48,4 +46,7 @@ echo "Kernel Build Finished"
 
 
 mkdir -p $BOOTLOADER_OUT
-#cp $KERNEL_OUT/arch/arm64/boot/{Image,dts/marvell/armada-3720-community.dtb} $BOOTLOADER_OUT
+
+cp $KERNEL_OUT/arch/x86/boot/bzImage $BOOTLOADER_OUT
+mkdir -p $MODULE_OUT
+make modules_install INSTALL_MOD_PATH=$MODULE_OUT
